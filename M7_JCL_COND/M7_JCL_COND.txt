@@ -1,0 +1,20 @@
+//AUDITX JOB C, 'AXEL COLACE', CLASS=A, MSGCLASS=X, MSGLEVEL=(1,1)
+//* STEP1: Generación del archivo de padrón inicial
+//STEP1  EXEC PGM=M7_GEN_DUMMY
+//PADIN  DD DSN=PADRON_INST.TXT, DISP=NEW
+//SYSOUT DD SYSOUT=*
+//* STEP2: Procesamiento del padrón con validaciones y clasificación
+//STEP2  EXEC PGM=M6_SIM_P3_ANSES
+//PADIN  DD DSN=PADRON_INST.TXT, DISP=OLD
+//PADOK  DD DSN=PADRON_OK.TXT, DISP=NEW
+//PADER  DD DSN=PADRON_ER.TXT, DISP=NEW
+//SYSOUT DD SYSOUT=*
+//* Condicional: Si STEP2 finaliza con error (RC>0), se ejecuta auditoría de
+//*              registros erróneos.
+//IF (STEP2.RC > 0) THEN
+//* STEP3: Ejecución del programa que analiza los registros inválidos y genera
+//*         el archivo de errores para control posterior.
+//STEP3  EXEC PGM=M7_AUDITOR
+//REGER  DD DSN="REGISTRO_DE_ERRORES.TXT", DISP=NEW
+//SYSOUT DD SYSOUT=*
+//ENDIF
