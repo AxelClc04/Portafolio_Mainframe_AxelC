@@ -1,0 +1,197 @@
+*> ======================================================================
+*> PROGRAM-ID : M9_P3_BATCH_DB2
+*> PURPOSE    : Actualización batch de salarios y registro de errores SQL
+*> AUTHOR     : Axel Colace
+*> DATE       : 01/11/2025
+*> ======================================================================
+IDENTIFICATION DIVISION.
+PROGRAM-ID. M9_P3_BATCH_DB2.
+
+ENVIRONMENT DIVISION.
+INPUT-OUTPUT SECTION.
+
+FILE-CONTROL.
+
+*> Archivos de entrada y salida
+
+  SELECT IN-SUELDOS ASSIGN TO "sueldos_entrada.txt"
+  ORGANIZATION IS LINE SEQUENTIAL
+  FILE STATUS IS FS-IN.
+  
+  SELECT ER-SUELDOS ASSIGN TO "sueldos_con_error.txt"
+  ORGANIZATION IS LINE SEQUENTIAL
+  FILE STATUS IS FS-ER.
+
+DATA DIVISION.
+FILE SECTION.
+
+*> ==========================================================
+*> SECCIÓN: ARCHIVO DE ENTRADA — SUELDOS
+*> ==========================================================
+
+FD IN-SUELDOS.
+01 IN-REG.
+  05 IN-LEGAJO   PIC 9(5).
+  05 FILLER      PIC X VALUE "|".
+  05 IN-NOMBRE   PIC X(20).
+  05 FILLER      PIC X VALUE "|".
+  05 IN-SALARIO  PIC 9(7).
+
+*> ==========================================================
+*> SECCIÓN: ARCHIVO DE ERRORES — SQLCODE Y DETALLE
+*> ==========================================================
+
+FD ER-SUELDOS.
+01 ER-REG.
+  05 ER-LEGAJO   PIC 9(5).
+  05 FILLER      PIC X VALUE "|".
+  05 ER-NOMBRE   PIC X(20).
+  05 FILLER      PIC X VALUE "|".
+  05 SQLCOD-ER   PIC S9(9) COMP-3.
+
+WORKING-STORAGE SECTION.
+
+*> ==========================================================
+*> SECCIÓN: ÁREA DE CONTROL Y VARIABLES HOST
+*> ==========================================================
+
+EXEC SQL INCLUDE SQLCA END-EXEC.
+
+77 FS-IN         PIC XX VALUE ZEROS.
+77 FS-ER         PIC XX VALUE ZEROS.
+
+77 FIN           PIC X VALUE "N".
+
+01 HT-LEGAJO     PIC 9(5).
+01 HT-NOMBRE     PIC X(20).
+01 HT-SALARIO    PIC 9(7).
+
+77 CON-READ      PIC 9(4) VALUE 0.
+77 CON-UPD       PIC 9(4) VALUE 0.
+77 CON-INS       PIC 9(4) VALUE 0.
+77 CON-ERR       PIC 9(4) VALUE 0.
+
+PROCEDURE DIVISION.
+
+*> ==========================================================
+*> SECCIÓN: PRINCIPAL — CONTROL GENERAL DEL PROCESO
+*> ==========================================================
+
+MAIN-PROCEDURE.
+
+OPEN  IN-SUELDOS
+      ER-SUELDOS.
+
+IF FS-IN NOT = "00"
+  DISPLAY "Error al abrir los archivos de ingreso. File Status: " FS-IN
+  MOVE 8 TO RETURN-CODE
+  STOP RUN
+END-IF.
+
+*> ==========================================================
+*> SECCIÓN: LECTURA Y PROCESAMIENTO DE REGISTROS
+*> ==========================================================
+
+PERFORM UNTIL FIN = "S"
+  
+  READ IN-SUELDOS
+    AT END
+      MOVE "S" TO FIN
+    NOT AT END
+      ADD 1 TO CON-READ
+      MOVE IN-LEGAJO  TO HT-LEGAJO
+      MOVE IN-NOMBRE  TO HT-NOMBRE
+      MOVE IN-SALARIO TO HT-SALARIO
+      PERFORM ACTUALIZAR-DB2
+  END-READ
+
+END-PERFORM.
+
+*> ==========================================================
+*> SECCIÓN: RESUMEN FINAL
+*> ==========================================================
+
+DISPLAY "**************************************************"
+DISPLAY "Resumen de movimientos de registros:"
+DISPLAY "Contador de registros leidos:       " CON-READ
+DISPLAY "Contador de registros actualizados: " CON-ACT
+DISPLAY "Contador de registros Insertados:   " CON-INS
+DISPLAY "Contador de registros erroneos:     " CON-ERR
+DISPLAY "**************************************************"
+DISPLAY "Proceso del programa 'M9_P3_BATCH_DB2' finalizado."
+DISPLAY "RETURN-CODE:" RETURN-CODE
+DISPLAY "**************************************************"
+
+*> ==========================================================
+*> SECCIÓN: CIERRE
+*> ==========================================================
+
+CLOSE IN-SUELDOS
+      ER-SUELDOS.
+
+MOVE 0 TO RETURN-CODE
+STOP RUN.
+
+*> ==========================================================
+*> SECCIÓN: ACTUALIZAR REGISTRO EN DB2
+*> ==========================================================
+
+ACTUALIZAR-DB2
+  EXEC SQL
+    UPDATE EMPLEADOS
+    SET SALARIO  = :HT-SALARIO
+    WHERE LEGAJO = :HT-LEGAJO
+  END-EXEC
+
+EVALUATE TRUE
+  WHEN SQLCODE = 0
+    ADD 1 TO CON-ACT
+
+  WHEN SQLCODE = +100
+    PERFORM INSERTAR-DB2
+
+  WHEN SQLCODE < 0
+    PERFORM REGISTRAR-ERROR
+
+  WHEN OTHER
+    DISPLAY "ERROR SQL DESCONOCIDO, SQLCODE: " SQLCODE
+END-EVALUATE
+EXIT.
+
+*> ==========================================================
+*> SECCIÓN: INSERCIÓN DE NUEVOS REGISTROS EN DB2
+*> ==========================================================
+
+INSERTAR-DB2
+
+EXEC SQL
+  INSERT INTO EMPLEADOS (LEGAJO, NOMBRE, SALARIO)
+  VALUES (:HT-LEGAJO, :HT-NOMBRE, :HT-SALARIO)
+END-EXEC
+
+IF SQLCODE = 0
+  ADD 1 TO CON-INS
+ELSE
+  PERFORM REGISTRAR-ERROR
+END-IF.
+EXIT.
+
+*> ==========================================================
+*> SECCIÓN: REGISTRO DE ERRORES SQL
+*> ==========================================================
+
+REGISTRAR-ERROR
+  MOVE HT-LEGAJO  TO ER-LEGAJO
+  MOVE HT-NOMBRE  TO ER-NOMBRE
+  MOVE SQLCODE    TO SQLCOD-ER
+ 
+  WRITE ER-REG
+  ADD 1 TO CON-ERR
+
+IF FS-ER NOT = "00"
+  DISPLAY "Error al escribir en el archivo de errores FILE STATUS:" FS-ER
+  MOVE 8 TO RETURN-CODE
+  STOP RUN
+END-IF
+
+EXIT.
