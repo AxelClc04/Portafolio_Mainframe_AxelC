@@ -23,7 +23,7 @@ priorizando primero la consolidación de mis bases en el ecosistema Mainframe.
 ### - Curriculum Vitae.
 
 ### - Proyectos
-1. Validador de Comprobantes.
+1. Validador de Comprobantes. (./M6_SIM_AFIP)
 - **M6_SIM_AFIP:** Código en COBOL puro.
 - **README_M6-P3-COMPROBANTES-AFIP.md**  
 
