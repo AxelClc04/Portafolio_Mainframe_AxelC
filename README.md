@@ -20,7 +20,7 @@ priorizando primero la consolidación de mis bases en el ecosistema Mainframe.
 
 ## 📂 Índice de Portafolio
 
-### - [Curriculum Vitae](./Curriculum Vitae - Axel Colace.pdf)
+### - [Curriculum Vitae](./Curriculum_Vitae_Axel-Colace.pdf) 
 
 ### - Proyectos
 1. [Validador de Comprobantes.](./M6_SIM_AFIP)
