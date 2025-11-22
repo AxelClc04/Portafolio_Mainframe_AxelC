@@ -14,7 +14,7 @@ priorizando primero la consolidación de mis bases en el ecosistema Mainframe.
 
 ## 🔗 Enlaces
 
-- **LinkedIn:** [enlace pendiente]
+- **LinkedIn:** linkedin.com/in/axel-colace/
 
 ---
 
