@@ -5,10 +5,10 @@
 *> DATE : 01/11/2025
 *> ==========================================================
 IDENTIFICATION DIVISION.
-PROGRAM-ID. M9_P2_MANTENIMIENTO.
+ PROGRAM-ID. M9_P2_MANTENIMIENTO.
 
 DATA DIVISION.
-WORKING-STORAGE SECTION.
+ WORKING-STORAGE SECTION.
   EXEC SQL INCLUDE SQLCA END-EXEC.
   01 WS-LEGAJO     PIC 9(4).
   01 WS-NOMBRE     PIC X(20).
@@ -20,46 +20,46 @@ PROCEDURE DIVISION.
 *> SECCIÓN: SOLICITUD DE DATOS
 *> ============================================================================
 
-  DISPLAY "Ingrese el numero de legajo: "
-  ACCEPT WS-LEGAJO
-  DISPLAY "Ingrese el salario del usuario: "
-  ACCEPT WS-SALARIO
+ DISPLAY "Ingrese el numero de legajo: "
+ ACCEPT WS-LEGAJO
+ DISPLAY "Ingrese el salario del usuario: "
+ ACCEPT WS-SALARIO
 
 *> ============================================================================
 *> SECCIÓN: PROCESO DE ACTUALIZACION Y REGISTRO
 *> ============================================================================
 
-  EXEC SQL
-    UPDATE EMPLEADOS
-    SET SALARIO = :WS-SALARIO
-    WHERE LEGAJO = :WS-LEGAJO
-  END-EXEC.
+ EXEC SQL
+  UPDATE EMPLEADOS
+  SET SALARIO = :WS-SALARIO
+  WHERE LEGAJO = :WS-LEGAJO
+ END-EXEC.
 
-  IF SQLCODE = 0
-    DISPLAY "Actualizacion realizada."
+ IF SQLCODE = 0
+  DISPLAY "Actualizacion realizada."
 
 *> Si no existe el legajo (SQLCODE +100), se solicita registro nuevo
 
-  ELSE
-    IF SQLCODE = +100
-      DISPLAY "Legajo no encontrado. Ingrese el nombre de usuario a registrar:"
-      ACCEPT WS-NOMBRE
-      EXEC SQL
-        INSERT INTO EMPLEADOS (LEGAJO, NOMBRE, SALARIO)
-        VALUES (:WS-LEGAJO, :WS-NOMBRE, :WS-SALARIO)
-      END-EXEC.
-      IF SQLCODE = 0
-        DISPLAY "Nuevo registro insertado correctamente"
+ ELSE
+   IF SQLCODE = +100
+     DISPLAY "Legajo no encontrado. Ingrese el nombre de usuario a registrar:"
+     ACCEPT WS-NOMBRE
+     EXEC SQL
+       INSERT INTO EMPLEADOS (LEGAJO, NOMBRE, SALARIO)
+       VALUES (:WS-LEGAJO, :WS-NOMBRE, :WS-SALARIO)
+     END-EXEC.
+     IF SQLCODE = 0
+      DISPLAY "Nuevo registro insertado correctamente"
 
 *> Desde aqui se definen los casos de error.
 
-      ELSE
-        DISPLAY "Error en INSERT SQL:" SQLCODE
-      END-IF
-    ELSE 
-      DISPLAY "Error en GENERAL SQL:" SQLCODE
-    END-IF
-  END-IF.
+     ELSE
+       DISPLAY "Error en INSERT SQL:" SQLCODE
+     END-IF
+   ELSE 
+     DISPLAY "Error en GENERAL SQL:" SQLCODE
+   END-IF
+ END-IF.
 
-MOVE 0 TO RETURN-CODE.
-STOP RUN.
+ MOVE 0 TO RETURN-CODE.
+ STOP RUN.
